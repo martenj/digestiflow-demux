@@ -2,6 +2,11 @@
 
 import requests
 
+proxies = {
+    "http": "",
+    "https": "",
+}
+
 
 class ApiException(Exception):
     """Raised on problems with the Digestiflow Web API"""
@@ -25,7 +30,7 @@ class ApiClient:
 
     def _get(self, url):
         try:
-            res = requests.get(self.api_url + url, headers=self._headers())
+            res = requests.get(self.api_url + url, headers=self._headers(), proxies=proxies)
             res.raise_for_status()
             return res.json()
         except Exception as e:
@@ -40,7 +45,9 @@ class ApiClient:
         tpl = "/api/flowcells/%s/"
         url = tpl % (self.project_uuid,)
         try:
-            res = requests.get(self.api_url + url, headers=self._headers(), params=query_kwargs)
+            res = requests.get(
+                self.api_url + url, headers=self._headers(), params=query_kwargs, proxies=proxies
+            )
             res.raise_for_status()
             return res.json()
         except Exception as e:
@@ -56,7 +63,9 @@ class ApiClient:
         tpl = "/api/flowcells/%s/%s/"
         url = tpl % (self.project_uuid, flowcell_uuid)
         try:
-            res = requests.patch(self.api_url + url, headers=self._headers(), data=kwargs)
+            res = requests.patch(
+                self.api_url + url, headers=self._headers(), data=kwargs, proxies=proxies
+            )
             res.raise_for_status()
             return res.json()
         except Exception as e:
@@ -66,7 +75,9 @@ class ApiClient:
         url = "/api/messages/%s/%s/" % (self.project_uuid, flowcell_uuid)
         data = {"state": "draft" if attachments else "sent", "subject": subject, "body": body}
         try:
-            res = requests.post(self.api_url + url, headers=self._headers(), data=data)
+            res = requests.post(
+                self.api_url + url, headers=self._headers(), data=data, proxies=proxies
+            )
             res.raise_for_status()
             message = res.json()
         except Exception as e:
@@ -83,7 +94,10 @@ class ApiClient:
             try:
                 with open(path, "rb") as attachf:
                     res = requests.post(
-                        self.api_url + url, headers=self._headers(), files={"file": attachf}
+                        self.api_url + url,
+                        headers=self._headers(),
+                        files={"file": attachf},
+                        proxies=proxies,
                     )
                 res.raise_for_status()
             except Exception as e:
@@ -92,7 +106,9 @@ class ApiClient:
         url = "/api/messages/%s/%s/%s/" % (self.project_uuid, flowcell_uuid, message["sodar_uuid"])
         data = {"state": "sent"}
         try:
-            res = requests.patch(self.api_url + url, headers=self._headers(), data=data)
+            res = requests.patch(
+                self.api_url + url, headers=self._headers(), data=data, proxies=proxies
+            )
             res.raise_for_status()
         except Exception as e:
             raise Exception("Problem performing API call") from e
@@ -104,7 +120,10 @@ class ApiClient:
         try:
             with open(attachment.name, "rb") as attachf:
                 res = requests.post(
-                    self.api_url + url, headers=self._headers(), files={"file": attachf}
+                    self.api_url + url,
+                    headers=self._headers(),
+                    files={"file": attachf},
+                    proxies=proxies,
                 )
             res.raise_for_status()
             attachment = res.json()
