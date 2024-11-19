@@ -26,7 +26,7 @@ if barcode_mismatches is None:
     barcode_mismatches = 1
 
 # More than 8 threads will not work for bcl2fastq.
-bcl2fastq_threads = min(8, snakemake.config["cores"])  # noqa
+bcl2fastq_threads = min(64, snakemake.config["cores"])  # noqa
 
 # Get bases mask for the current sample sheet
 planned_reads = snakemake.config["flowcell"]["planned_reads"]  # noqa
