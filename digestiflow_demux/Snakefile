@@ -68,7 +68,8 @@ rule create_tarballs:
             -type f -and \
             -not -path '*Logs*' -and \
             -not -path '*Data*' -and \
-            -not -path '*Thumbnail*' \
+            -not -path '*Thumbnail*' -or \
+            -name 's.locs' \
          | sort -g \
          > $TMPDIR/files.txt)
 
@@ -86,8 +87,8 @@ rule create_tarballs:
              | sort -g \
              >> $TMPDIR/files_L${{lane}}.txt)
 
-            outf=$(dirname {output})/BCLS_LANE_${{lane}}.tar
-            tar --owner=0 --group=0 -C $(dirname {config[input_dir]}) -vcf $outf -T $TMPDIR/files_L${{lane}}.txt
+            outf=$(dirname {output})/$(basename {config[input_dir]})_BCLS_L${{lane}}.tar
+            tar --transform="s|$(basename {config[input_dir]})|$(basename {config[input_dir]})_BCLS_L${{lane}}|" --owner=0 --group=0 -C $(dirname {config[input_dir]}) -vcf $outf -T $TMPDIR/files_L${{lane}}.txt
             md5sum $outf >$outf.md5
         done
 
@@ -132,7 +133,17 @@ rule demux_bcl2fastq2_aggregate:
             d = os.path.dirname(final_path)
             f = os.path.basename(final_path)
             if not f.startswith("Undetermined_"):
-                os.rename(glob.glob(os.path.join(d, "*__" + f))[0], final_path)
+                samplefq = glob.glob(os.path.join(d, "*__" + f))
+                if not samplefq:
+                    print("M", "ERROR:","empty string for samplefq = no FastQ files named",f,"generated. Probably to '0' reads matching." )
+                    import gzip
+                    with gzip.open(final_path, "wt") as f:
+                        f.write("@placeholder\n")
+                        f.write("N\n")
+                        f.write("+\n")
+                        f.write("!\n")
+                else:
+                    os.rename(samplefq[0], final_path)
             else:
                 undetermined = glob.glob(os.path.join(d, keep_undetermined + "__" + f))
                 if not undetermined:

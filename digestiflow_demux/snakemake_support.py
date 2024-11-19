@@ -81,9 +81,9 @@ def undetermined_libraries(flowcell, rta_version):
     for lane in lanes:
         result.append(
             {
-                "name": "lane{}".format(lane)
-                if rta_version < RTA_MIN_BCL2FASTQ2
-                else "Undetermined",
+                "name": (
+                    "lane{}".format(lane) if rta_version < RTA_MIN_BCL2FASTQ2 else "Undetermined"
+                ),
                 "reference": library["reference"],
                 "barcode": "Undetermined",
                 "barcode2": "Undetermined",

@@ -163,7 +163,7 @@ def write_sample_sheet_picard(flowcell, libraries, output_dir):
         samples_rows = []
         for lib in libraries.values():
             output_prefix = "{lane}/{name}".format(
-                name=lib["name"], lane=lane
+                name=lib["name"], flowcell=flowcell["vendor_id"], lane=lane
             )
 
             if dual_indexing:
@@ -223,7 +223,15 @@ def load_run_parameters(path_run_parameters_xml):
     with open(path_run_parameters_xml, "rt") as xmlf:
         xmls = xmlf.read()
     root = ET.fromstring(xmls.lower())
-    version_string = next(root.iter("rtaversion")).text
+    version_string = None
+    try:
+        version_string = next(root.iter("rtaversion")).text
+    except StopIteration as e:
+        print("No rtaVersion tag found")
+    """fix for NextSeqXplus without rta version information in the RunParameters"""
+    if not version_string:
+        version_string = "3." + next(root.iter("systemsuiteversion")).text
+    """ fix end """
     if version_string.startswith("v"):
         version_string = version_string[1:]
     rta_version = tuple(map(int, version_string.split(".")))
@@ -272,6 +280,7 @@ def create_sample_sheet(config, input_dir, output_dir):  # noqa: C901
         return None
     if not flowcell["libraries"] and "seq" in flowcell["delivery_type"]:
         logging.warning("There are no libraries in flow cell. I'm refusing to continue.")
+        logging.warning("delivery type: %s", flowcell["delivery_type"])
         return None
 
     if not config.api_read_only:
@@ -407,6 +416,7 @@ def create_sample_sheet(config, input_dir, output_dir):  # noqa: C901
 
 def send_flowcell_success_message(client, flowcell, output_dir, *log_files):
     if "seq" in flowcell["delivery_type"]:
+        print("[MARTEN] Wir sind hier gelandet")
         # Remove log files that do not exist.
         existing_log_files = [p for p in log_files if os.path.exists(p)]
         missing_log_files = [p for p in log_files if not os.path.exists(p)]
@@ -437,12 +447,16 @@ def send_flowcell_success_message(client, flowcell, output_dir, *log_files):
                 ),
             )
     else:
+        existing_log_files = [p for p in log_files if os.path.exists(p)]
         # No sequences generated, no MultiQC created.
+        print("[MARTEN] hier wollen wir hin")
         return client.message_send(
             flowcell_uuid=flowcell["sodar_uuid"],
             subject="Demultiplexing succeeded for flow cell %s" % flowcell["vendor_id"],
-            body=TPL_MSG_SUCCESS.format(flowcell=flowcell, version=__version__),
-            attachments=list(log_files),
+            body=TPL_MSG_SUCCESS.format(
+                flowcell=flowcell, version=__version__, missing_log_files="none; all found"
+            ),
+            attachments=list(existing_log_files),
         )
 
 
