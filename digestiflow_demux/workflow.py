@@ -325,8 +325,10 @@ def create_sample_sheet(config, input_dir, output_dir):  # noqa: C901
             barcode_seq2 = reverse_complement(barcode_seq2)
 
         if library["demux_reads"]:
+            print("[MARTEN] hier wollen wir hin")
             demux_reads = library["demux_reads"]
         else:
+            print("[MARTEN] hier wollen wir NICHT hin")
             demux_reads = flowcell["demux_reads"] or flowcell["planned_reads"]
 
         try:
@@ -346,6 +348,7 @@ def create_sample_sheet(config, input_dir, output_dir):  # noqa: C901
                 "demux_reads_override": demux_reads,
             }
         )
+    print("[MARTEN] done iterating over libraries")
 
     # Get delivery type from flowcell information.
     delivery_type = flowcell["delivery_type"].split("_")
@@ -353,19 +356,25 @@ def create_sample_sheet(config, input_dir, output_dir):  # noqa: C901
     # Normalize bases masks, decide if paired-end, find all custom bases_masks
     planned_reads = flowcell["planned_reads"]
     demux_reads = flowcell.get("demux_reads") or planned_reads
+    #demux_reads = flowcell["demux_reads"] or planned_reads
+    print("[MARTEN] workflow - planned_reads: {}".format(planned_reads))
+    print("[MARTEN] workflow - demux_reads: {}".format(demux_reads))
     demux_reads = return_bases_mask(planned_reads, demux_reads, "picard")
     flowcell["demux_reads"] = demux_reads  # not used by bcl2fastq2
     flowcell["demux_reads_override"] = list(sorted(demux_reads_override))
 
     rta_version = run_parameters["rta_version"]
 
-    if "M" in flowcell["demux_reads"]:  # TODO: refine condition
-        demux_tool = "picard"
-    elif config.demux_tool == "bcl2fastq" and rta_version >= (1, 18, 54):
+    #f "M" in flowcell["demux_reads"]:  # TODO: refine condition
+    #    demux_tool = "picard"
+    #el
+    if config.demux_tool == "bcl2fastq" and rta_version >= (1, 18, 54):
+        print("[MARTEN] das hier wollen wir - bcl2fastq2")
         demux_tool = "bcl2fastq2"
     elif config.demux_tool == "bcl2fastq":
         demux_tool = "bcl2fastq1"
     else:
+        print("[MARTEN] wir wollen NICHT PICARD")
         demux_tool = "picard"
     logging.info("Using demux tool %s", demux_tool)
 

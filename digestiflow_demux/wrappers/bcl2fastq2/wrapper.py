@@ -31,7 +31,13 @@ bcl2fastq_threads = min(64, snakemake.config["cores"])  # noqa
 # Get bases mask for the current sample sheet
 planned_reads = snakemake.config["flowcell"]["planned_reads"]  # noqa
 bases_mask = os.path.basename(os.path.dirname(snakemake.input.sheet))  # noqa
+print("[MARTEN] generate bases_mask_illumina")
 bases_mask_illumina = return_bases_mask(planned_reads, bases_mask)
+print("[MARTEN] bases_mask_illumina generated")
+
+
+print("[MARTEN] bases_mask: {}".format(bases_mask))
+print("[MARTEN] bases_mask_illumina: {}".format(bases_mask_illumina))
 
 # Get sample map to get sample numbering correct
 sample_map = build_sample_map(snakemake.config["flowcell"])  # noqa

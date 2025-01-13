@@ -164,6 +164,18 @@ def get_result_files_demux(config):
     undetermined = undetermined_libraries(flowcell, rta_version) if expect_undetermined else []
 
     for lib in flowcell["libraries"] + undetermined:
+        #print("[MARTEN] lib: {}".format(lib))
+        if lib["name"] != "Undetermined":
+            lib_bases_mask=lib["demux_reads_override"]
+        n_template = lib_bases_mask.count("T")
+        n_index = (
+            lib_bases_mask.count("B")
+            if (
+                config["bcl2fastq2_params"]["create_fastq_for_index_reads"]
+                and config["demux_tool"] == "bcl2fastq2"
+            )
+            else 0
+        )      
         for lane in sorted(lib["lanes"]):
             if config["lanes"] and lane not in config["lanes"]:
                 continue  # skip disabled lanes
@@ -238,9 +250,9 @@ def get_tool_marker(config):
                 )
             )
     elif "M" in config["flowcell"]["demux_reads"]:
-        if config["demux_tool"] == "picard":
-            return "picard.done"
-        else:
+        if config["demux_tool"] == "bcl2fastq1":
+#            return "picard.done"
+#        else:
             raise InvalidConfiguration(
                 "Only picard can be used to write UMIs to separate FASTQ file. There is an 'M' "
                 "in your bases mask, but you wanted to run bcl2fastq(2)."

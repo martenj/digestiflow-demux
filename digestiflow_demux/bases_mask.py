@@ -57,7 +57,7 @@ def compare_bases_mask(planned_reads, bases_mask, demux_tool="bcl2fastq"):
     for op, cycles in mask:
         for i in range(cycles):
             exp_mask.append((op, 1))
-
+    print("[MARTEN] exp_mask: {}".format(exp_mask))
     result = []
     offset = 0
     for p_type, p_cycles in planned:
@@ -69,6 +69,7 @@ def compare_bases_mask(planned_reads, bases_mask, demux_tool="bcl2fastq"):
                 curr.append([m_type, 1])
         result.append(list(map(tuple, curr)))
         offset += p_cycles
+    print("[MARTEN] result: {}".format(result))
 
     return result
 
@@ -76,9 +77,10 @@ def compare_bases_mask(planned_reads, bases_mask, demux_tool="bcl2fastq"):
 def translate_tuple_to_basemask(tup, demux_tool):
     """Return illumina or picard-style base mask string"""
 
-    picard_to_illumina = {"T": "y", "S": "n", "B": "I"}
-
+    picard_to_illumina = {"T": "y", "M": "y", "S": "n", "B": "I"}
+    print("[MARTEN] bm tupletrans - demux_tool: {}".format(demux_tool))
     if demux_tool == "bcl2fastq":
+        print("[MARTEN] bm tupletrans - hier hin im tupeltranslate")
         return picard_to_illumina[tup[0]] + str(tup[1])
     else:
         return str(tup[1]) + tup[0]
@@ -88,13 +90,19 @@ def return_bases_mask(planned_reads, demux_reads, demux_tool="bcl2fastq"):
     """Parse planned_reads and demux_reads (user-configured base mask), compare for compatiblity
     and return a string to either give to bcl2fastq or picard"""
 
-    if "M" in demux_reads and demux_tool == "bcl2fastq":
-        raise BaseMaskConfigException("You cannot assign UMIs ('M') if using bcl2fastq")
+    #if "M" in demux_reads and demux_tool == "bcl2fastq":
+    #    raise BaseMaskConfigException("You cannot assign UMIs ('M') if using bcl2fastq")
 
     mask_list = compare_bases_mask(planned_reads, demux_reads, demux_tool)
 
+    print("[MARTEN] bases_mask - planned_reads: {}".format(planned_reads))
+    print("[MARTEN] bases_mask - demux_reads: {}".format(demux_reads))
+    print("[MARTEN] bases_mask - mask_list: {}".format(mask_list))
+    
     new_mask = []
     for lst in mask_list:
         substr = [translate_tuple_to_basemask(t, demux_tool) for t in lst]
         new_mask.append("".join(substr))
+        
+    print("[MARTEN] bases_mask - new_mask_list: {}".format(new_mask))
     return ",".join(new_mask) if demux_tool == "bcl2fastq" else "".join(new_mask)
